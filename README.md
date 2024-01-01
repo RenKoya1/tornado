@@ -1,66 +1,36 @@
-## Foundry
+## Tornado
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+# phase1
 
-Foundry consists of:
+```
+mkdir -p build
+snarkjs powersoftau new bn128 15 build/pot15_0000.ptau -v
+openssl rand -hex 10 | snarkjs powersoftau contribute build/pot15_0000.ptau build/pot15_0001.ptau --name="First contribution" -v
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+snarkjs powersoftau prepare phase2 build/pot15_0001.ptau build/pot15_final.ptau -v
 ```
 
-### Test
+# phase2
 
-```shell
-$ forge test
+```
+circom circuits/withdraw.circom --r1cs --wasm --sym -o build
+snarkjs groth16 setup build/withdraw.r1cs build/pot15_final.ptau build/withdraw_0000.zkey
+openssl rand -hex 10 | snarkjs zkey contribute build/withdraw_0000.zkey build/withdraw_0001.zkey --name="1st Contributor Name" -v
+snarkjs zkey export verificationkey build/withdraw_0001.zkey build/verification_key.json
+
+snarkjs zkey export solidityverifier build/withdraw_0001.zkey src/Verifier.sol
+forge fmt
+sed -i -e 's/pragma solidity \^0.8.11/pragma solidity 0.8.23/g' ./src/Verifier.sol
 ```
 
-### Format
+# test
 
-```shell
-$ forge fmt
+```
+forge test -vvv
 ```
 
-### Gas Snapshots
+ref
 
-```shell
-$ forge snapshot
-```
+tornado: https://github.com/tornadocash/tornado-core
 
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+https://github.com/minaminao/tornado-cats/tree/main
